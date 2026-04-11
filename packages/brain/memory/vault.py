@@ -4,6 +4,7 @@ import time
 import hashlib
 from datetime import datetime
 import asyncio
+from functools import lru_cache
 
 logger = logging.getLogger("PRGX.Vault")
 
@@ -47,13 +48,15 @@ class Vault:
         metadata.setdefault("usage_count", 1)
         metadata.setdefault("last_synced", datetime.now().isoformat())
 
-        await asyncio.to_thread(
-            self.gems.upsert,
-            documents=[text],
-            metadatas=[metadata],
-            embeddings=[Vault._embed_text(text)],
-            ids=[gem_id]
-        )
+        def _sync_upsert():
+            self.gems.upsert(
+                documents=[text],
+                metadatas=[metadata],
+                embeddings=[Vault._embed_text(text)],
+                ids=[gem_id]
+            )
+
+        await asyncio.to_thread(_sync_upsert)
         logger.info(f"💎 Stored Gem: {text[:20]}... (ID: {gem_id})")
 
     async def update_resonance(self, gem_id):
