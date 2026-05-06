@@ -13,6 +13,29 @@ export interface PhysicsParams {
   timestamp: string;
 }
 
+export function isNeuralShaderParams(obj: any): obj is NeuralShaderParams {
+  return (
+    typeof obj === 'object' &&
+    obj !== null &&
+    typeof obj.color_base === 'string' &&
+    typeof obj.vibe_intensity === 'number' &&
+    typeof obj.ripple_pattern === 'string'
+  );
+}
+
+export function isPhysicsParams(obj: any): obj is PhysicsParams {
+  return (
+    typeof obj === 'object' &&
+    obj !== null &&
+    Array.isArray(obj.intent_vector) &&
+    typeof obj.vibe_score === 'number' &&
+    typeof obj.emotional_tone === 'string' &&
+    isNeuralShaderParams(obj.neural_shader_params) &&
+    ['startup', 'resonance', 'uposatha', 'parajika', 'normal'].includes(obj.triggered_ritual) &&
+    typeof obj.timestamp === 'string'
+  );
+}
+
 export interface GemOfWisdom {
   id: string;
   pattern: string; // acoustic_vector

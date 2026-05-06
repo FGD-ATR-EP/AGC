@@ -1,4 +1,4 @@
-import { PhysicsParams } from '../types/intent';
+import { PhysicsParams, isPhysicsParams } from '../types/intent';
 
 export class AetherBusClient {
     private ws: WebSocket;
@@ -15,18 +15,26 @@ export class AetherBusClient {
             try {
                 const data = JSON.parse(event.data);
 
-                // Validate MCP & PhysicsParams (support both direct and tools/ prefixed methods)
-                const isShaderIntentMethod =
-                    data.method === "ui:shader_intent" || data.method === "tools/ui:shader_intent";
+                if (data.jsonrpc !== "2.0") return;
 
-                if (data.jsonrpc === "2.0" && isShaderIntentMethod && data.params) {
-                    const physics = data.params.arguments as PhysicsParams;
-                    if (this.messageHandler) {
-                        this.messageHandler(physics);
+                // Strip prefix if present (e.g., tools/ui:shader_intent -> ui:shader_intent)
+                const method = data.method?.startsWith("tools/")
+                    ? data.method.substring(6)
+                    : data.method;
+
+                if (method === "ui:shader_intent" && data.params?.arguments) {
+                    const physics = data.params.arguments;
+
+                    if (isPhysicsParams(physics)) {
+                        if (this.messageHandler) {
+                            this.messageHandler(physics);
+                        }
+                    } else {
+                        console.warn('Received invalid PhysicsParams:', physics);
                     }
                 }
             } catch (e) {
-                console.error('Failed to parse PhysicsParams:', e);
+                console.error('Failed to process AetherBus message:', e);
             }
         };
 
